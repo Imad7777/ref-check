@@ -24,6 +24,15 @@ venue 是否与官方登记一致。
    or author-year entries; end boundary = next section heading).
 2. **Split entries** with `re.split(r'\n\[(\d+)\]\s', ...)`. For every NODOI entry,
    re-check the original text for a line-wrapped DOI (`10.1145/\n3613904...` is common).
+   - **Line-wrapped DOIs — always look at the NEXT line**: grep shows only the matched
+     line, so the continuation is invisible. Real-world miss: one entry ended with
+     `doi:10.1016/j.tics.` and the continuation `2021.02.007` sat on the next line —
+     checking only the matched line caused a false "incomplete DOI" verdict.
+     Safer: join each entry's internal newlines into spaces (or append the next line)
+     before regex-matching DOIs.
+   - **An "incomplete-looking" DOI is a wrap signal, not a citation error**: a captured
+     DOI ending in `.` or `/` (e.g. `10.1016/j.tics.`, `10.1145/`) should be assumed
+     line-wrapped — stitch the original text and verify before judging; only then FAIL.
 3. **Verify each entry**:
    - DOI → `https://api.crossref.org/works/{doi}` (User-Agent with a mailto; sleep 0.3–0.5 s
      between calls); retrieve `title / container-title / issued`.
@@ -37,6 +46,11 @@ venue 是否与官方登记一致。
 **中文**
 1. 在提取文本中定位参考文献段（首个编号条目起，下一章节标题止）。
 2. 按编号正则切分条目；每个 NO-DOI 条目回原文二次检查跨行 DOI。
+   - **跨行 DOI 必须看命中行的下一行**：grep 只显示命中行，续行会漏（实例：某条目命中行
+     结尾是 `doi:10.1016/j.tics.`，续行 `2021.02.007` 在下一行——只看命中行会误判"残缺
+     DOI"）。更稳做法：切分时把条目内部换行合并为空格（或拼接下一行）后再匹配 DOI。
+   - **"DOI 看似残缺"是续行信号而非引用错误**：正则抓到以 `.` 或 `/` 结尾的 DOI
+     （如 `10.1016/j.tics.`、`10.1145/`），先假定跨行折断，回原文拼接验证后再下结论。
 3. 逐条核验：DOI → Crossref API（带 mailto 的 User-Agent，限速 0.3–0.5 秒）；arXiv → arXiv
    API；无 DOI 条目（书章/专著/网页）人工判断，不判 FAIL。
 4. 标题模糊比对：归一化后 SequenceMatcher，阈值 0.6。
