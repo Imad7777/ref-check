@@ -18,12 +18,9 @@
 2. 运行 `python scripts/check_refs.py extracted_text.txt`（可用 `--start/--end` 指定参考文献段边界）；
 3. 对 MISMATCH 条目人工复核（见 SKILL.md 中的已知假阳性清单）。
 
-### 经典用法
+### 用法
 
-两条路径，按你手头的材料选：
-
-- **作为 skill 被 agent 调用（推荐）**：在支持技能目录的 agent 里，直接贴 PDF（或已提取的全文文本）+ 一句话，例如"核验这篇论文参考文献的真实性 @paper.pdf"。agent 会自动完成 提取 → 解析条目 → Crossref/arXiv 比对 → 分类报告。适合审稿现场和写作自查，无需手动跑命令。
-- **独立脚本运行**：已有提取文本、或想精确控制参考文献段边界时，直接跑 `python scripts/check_refs.py extracted_text.txt --start "..." --end "..."`。适合批量处理，或把核验嵌进自己的脚本流水线。
+- **作为 skill 被 agent 调用**：在支持技能目录的 agent 里，直接粘贴全文 PDF（或已提取的全文文本）+ 一句话，例如"核验这篇论文参考文献的真实性 @paper.pdf"。agent 会自动完成 提取 → 解析条目 → Crossref/arXiv 比对 → 分类报告。适合审稿现场和写作自查，无需手动跑命令。
 
 > 脚本本体只依赖 Python 标准库（3.8+）；PyMuPDF 仅提取步骤需要（见 `requirements.txt` 注释）。
 
@@ -71,10 +68,7 @@ verdict: 71/77 verified; review all MISMATCH/FAIL lines manually (metadata trunc
 
 ### Classic usage
 
-Two paths, depending on what you have at hand:
-
 - **Invoked as a skill by an agent (recommended)**: in an agent that supports skill directories, simply attach the PDF (or the extracted text) with one sentence, e.g. "Verify the authenticity of this paper's references @paper.pdf". The agent runs extraction → entry parsing → Crossref/arXiv lookup → classified report automatically.
-- **Standalone script**: when you already have the extracted text, or need precise control over reference-section boundaries, run `python scripts/check_refs.py extracted_text.txt --start "..." --end "..."` — suitable for batch processing or pipelines.
 
 ### Prompt template & sample output
 
