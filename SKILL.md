@@ -47,8 +47,8 @@ venue 是否与官方登记一致。
 1. 在提取文本中定位参考文献段（首个编号条目起，下一章节标题止）。
 2. 按编号正则切分条目；每个 NO-DOI 条目回原文二次检查跨行 DOI。
    - **跨行 DOI 必须看命中行的下一行**：grep 只显示命中行，续行会漏（实例：某条目命中行
-     结尾是 `doi:10.1016/j.tics.`，续行 `2021.02.007` 在下一行——只看命中行会误判"残缺
-     DOI"）。更稳做法：切分时把条目内部换行合并为空格（或拼接下一行）后再匹配 DOI。
+     结尾是 `doi:10.1016/j.tics.`，续行 `2021.02.007` 在下一行；只看命中行会误判"残缺
+     DOI"）。更稳妥的方式：切分时把条目内部换行合并为空格（或拼接下一行）后再匹配 DOI。
    - **"DOI 看似残缺"是续行信号而非引用错误**：正则抓到以 `.` 或 `/` 结尾的 DOI
      （如 `10.1016/j.tics.`、`10.1145/`），先假定跨行折断，回原文拼接验证后再下结论。
 3. 逐条核验：DOI → Crossref API（带 mailto 的 User-Agent，限速 0.3–0.5 秒）；arXiv → arXiv
@@ -56,7 +56,7 @@ venue 是否与官方登记一致。
 4. 标题模糊比对：归一化后 SequenceMatcher，阈值 0.6。
 5. 输出逐条报告 + 总体结论，核验结论写入交付文档的复核/附录小节。
 
-## 2. Known false positives / 已知假阳性（人工复核，勿轻判）
+## 2. Known false positives / 可能的检查失误
 
 - **Official metadata title truncation** — Crossref often stores short versions of ACM/IMWUT
   titles (real cases: Gaver 1999 → "Design: Cultural probes"; Geeng & Roesner → "Who's In
@@ -66,25 +66,15 @@ venue 是否与官方登记一致。
 
 中文：官方元数据标题截断（DOI 解析正确即为 OK）；比对串残留作者名；副标题大小写与连字符差异。
 
-## 3. Genuine mismatch signals / 真错配信号
+## 3. Genuine mismatch signals / 引用错误
 
 - DOI resolves 404; official title unrelated to the claim; year/venue mismatch; the same DOI
   reused by multiple entries; a "citation" pointing to a non-existent software release.
 
 中文：DOI 404；官方标题与引文无关；年份/venue 对不上；同一 DOI 被多条引文共用；指向不存在的软件发布页。
 
-## 4. Integration with review writing / 与审稿写作联动
 
-- **EN** All verified → integrity flag = No; note "references verified (full list / sampled)"
-  in confidential comments. Fabricated entries found → report to the chairs, never into the
-  author-visible text. Venue precedents vary: CHI (2027 AC/SC FAQ) tolerates one fabricated
-  reference, treats two as a judgment call, and **three easily justify desk rejection**; check
-  other venues' own policies.
-- **中文** 全部通过 → integrity flag = No，confidential 写明"引用已核验"；发现伪造 → 报告给
-  chairs，不写进作者可见文本。CHI 判例：1 条可原谅、2 条 judgment call、3 条即可 desk reject；
-  其他 venue 查对应 policy。
-
-## 5. Related skills / 相关技能
+## 4. Related skills / 相关技能
 
 - **paper-citation-tracer** — orthogonal: traces a quoted passage INTO the cited paper's PDF
   and highlights the original wording (answers "is it cited correctly?"; requires the cited
@@ -95,3 +85,4 @@ venue 是否与官方登记一致。
 
 中文：**paper-citation-tracer** 与本技能正交互补——tracer 溯源内容（引文段落 → 被引 PDF 高亮），
 本技能核验条目（参考文献列表 → 官方元数据）。审稿先跑本技能，可疑引用再切 tracer。
+https://github.com/Imad7777/paper-citation-tracer
