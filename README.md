@@ -18,6 +18,37 @@
 2. 运行 `python scripts/check_refs.py extracted_text.txt`（可用 `--start/--end` 指定参考文献段边界）；
 3. 对 MISMATCH 条目人工复核（见 SKILL.md 中的已知假阳性清单）。
 
+### 经典用法
+
+两条路径，按你手头的材料选：
+
+- **作为 skill 被 agent 调用（推荐）**：在支持技能目录的 agent 里，直接贴 PDF（或已提取的全文文本）+ 一句话，例如"核验这篇论文参考文献的真实性 @paper.pdf"。agent 会自动完成 提取 → 解析条目 → Crossref/arXiv 比对 → 分类报告。适合审稿现场和写作自查，无需手动跑命令。
+- **独立脚本运行**：已有提取文本、或想精确控制参考文献段边界时，直接跑 `python scripts/check_refs.py extracted_text.txt --start "..." --end "..."`。适合批量处理，或把核验嵌进自己的脚本流水线。
+
+> 脚本本体只依赖 Python 标准库（3.8+）；PyMuPDF 仅提取步骤需要（见 `requirements.txt` 注释）。
+
+### 提示词模板与示例输出
+
+在 agent 里把下面这段连同 PDF 一起发出去即可：
+
+```text
+请核验这篇论文参考文献的真实性：@chi27-samples.pdf
+重点检测两类问题：伪造引用（官方数据库查无此文）、张冠李戴（DOI 或标题对不上）。
+对 FAIL 和 MISMATCH 条目逐条说明差异在哪里。
+```
+
+脚本输出每条引用一行（数字为示意）：
+
+```text
+3  | 10.1145/2702123.2802141 | Where's My Stuff? Designin…  | Where's My Stuff? Designing… | 2015 | CSCW | 0.97 | OK
+7  | 10.1145/3290605.3300269 | Predicting QWERTY typing on… | Predicting text entry speed on QWERTY keyboards… | 2019 | CHI | 0.42 | MISMATCH
+12 | no-doi                  | The Design of Everyday Things… | (book chapter / monograph — verify manually) |  |  |  | NODOI
+
+verdict: 71/77 verified; review all MISMATCH/FAIL lines manually (metadata truncation can cause false positives — see SKILL.md).
+```
+
+列含义：编号 | DOI / arXiv ID | 引文里的标题 | 官方登记标题 | 年份 | venue | 相似度 | 状态（OK / MISMATCH / FAIL / NODOI）。
+
 详细工作流、已知陷阱与审稿联动说明见 [`SKILL.md`](SKILL.md)（中英双语）。
 
 ---
@@ -37,6 +68,30 @@
 1. Extract the manuscript's full text with PyMuPDF (page-wise `get_text()`, pages joined by `\f`) into a text file;
 2. Run `python scripts/check_refs.py extracted_text.txt` (use `--start/--end` to mark the reference-section boundaries);
 3. Manually review any MISMATCH entries (see the known-false-positive list in [`SKILL.md`](SKILL.md), bilingual).
+
+### Classic usage
+
+Two paths, depending on what you have at hand:
+
+- **Invoked as a skill by an agent (recommended)**: in an agent that supports skill directories, simply attach the PDF (or the extracted text) with one sentence, e.g. "Verify the authenticity of this paper's references @paper.pdf". The agent runs extraction → entry parsing → Crossref/arXiv lookup → classified report automatically.
+- **Standalone script**: when you already have the extracted text, or need precise control over reference-section boundaries, run `python scripts/check_refs.py extracted_text.txt --start "..." --end "..."` — suitable for batch processing or pipelines.
+
+### Prompt template & sample output
+
+```text
+Please verify the authenticity of this paper's references: @chi27-samples.pdf
+Focus on: fabricated citations (not found in official databases) and mismatches (DOI/title conflicts).
+Explain each FAIL and MISMATCH entry line by line.
+```
+
+Each reference prints as one line (numbers are illustrative):
+
+```text
+7  | 10.1145/3290605.3300269 | Predicting QWERTY typing on… | Predicting text entry speed on QWERTY keyboards… | 2019 | CHI | 0.42 | MISMATCH
+12 | no-doi                  | The Design of Everyday Things… | (book chapter / monograph — verify manually) |  |  |  | NODOI
+
+verdict: 71/77 verified; review all MISMATCH/FAIL lines manually (metadata truncation can cause false positives — see SKILL.md).
+```
 
 ## Related skills / 相关技能
 

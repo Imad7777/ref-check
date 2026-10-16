@@ -1,0 +1,5 @@
+# check_refs.py itself uses only the Python standard library (Python 3.8+).
+# PyMuPDF is needed only for the text-extraction step (README step 1), if you
+# don't already have another way to extract the manuscript text. Uncomment to
+# install it via this file:
+# pymupdf>=1.24
