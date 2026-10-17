@@ -64,11 +64,10 @@ venue 是否与官方登记一致。
    `10.48550/arXiv.*` 是 DataCite 前缀 → 直接送 arXiv API；Crossref 404 且 DOI 已修复 →
    回退 DataCite API（api.datacite.org）；跨行 DOI 由 repair_doi 拼接（见第 2 步）；
    网络错误带退避重试，重试后仍 FAIL 的先重跑再下结论。arXiv → arXiv API；
-   无 DOI 条目（书章/专著/网页）人工判断，不判 FAIL。
+   无 DOI 条目（书章/专著/网页）人工判断，列出来，不判 FAIL。
 4. 标题比对（v2）：**整条条目**（合并空白）vs 官方标题，用最优滑窗 partial ratio
    （归一化后精确子串 = 1.0）。分档：**≥0.85 OK / 0.60–0.85 REVIEW / <0.60 MISMATCH**；
-   官方年份在条目中找不到 → 强制至少 REVIEW。禁止旧式「条目前 80 字符 + ratio>0.6」：
-   作者名稀释后真实引用只有 0.3–0.6 分，与伪造引用区间重叠（实测数据）。
+   官方年份在条目中找不到 → 强制至少 REVIEW。
 5. 输出逐条报告（编号 | DOI | 分数 | 引文标题 | 官方标题 | 年份 | venue | 状态）+ 总体
    结论；所有 REVIEW/MISMATCH/FAIL 逐条人工复核，核验结论写入交付文档的复核/附录小节。
 
