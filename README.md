@@ -8,7 +8,7 @@
 
 - 从论文全文提取文本中解析参考文献条目（编号样式 / 作者-年份样式）；
 - 逐条将 DOI 送 **Crossref API**、arXiv ID 送 **arXiv API**，取回官方登记的标题、年份、venue；
-- 与引文标题做模糊比对，输出 **OK / MISMATCH / FAIL / ARXIV / NODOI** 分类报告；
+- 与引文标题做模糊比对，输出 **OK / REVIEW / MISMATCH / FAIL / ARXIV / NODOI** 分类报告；
 - 用于审稿场景检测伪造引用、或写作场景自查参考文献。
 
 
@@ -44,7 +44,7 @@
 verdict: 71/77 verified; review all MISMATCH/FAIL lines manually (metadata truncation can cause false positives — see SKILL.md).
 ```
 
-列含义：编号 | DOI / arXiv ID | 引文里的标题 | 官方登记标题 | 年份 | venue | 相似度 | 状态（OK / MISMATCH / FAIL / NODOI）。
+列含义：编号 | DOI / arXiv ID | 引文里的标题 | 官方登记标题 | 年份 | venue | 分数（best-window 对齐） | 状态（OK / REVIEW / MISMATCH / FAIL / NODOI）。
 
 详细工作流、已知陷阱与审稿联动说明见 [`SKILL.md`](SKILL.md)（中英双语）。
 
@@ -56,7 +56,7 @@ verdict: 71/77 verified; review all MISMATCH/FAIL lines manually (metadata trunc
 
 - Parses reference entries from the extracted full text of a manuscript (numbered or author-year styles);
 - Verifies each DOI against the **Crossref API** and each arXiv ID against the **arXiv API**, retrieving the officially registered title, year, and venue;
-- Fuzzy-compares claimed vs. official titles and produces an **OK / MISMATCH / FAIL / ARXIV / NODOI** report;
+- Fuzzy-compares claimed vs. official titles and produces an **OK / REVIEW / MISMATCH / FAIL / ARXIV / NODOI** report;
 - Intended for peer review and for self-checking your own reference lists.
 
 
