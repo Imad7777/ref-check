@@ -92,6 +92,10 @@ verdict: 71/77 verified; review all MISMATCH/FAIL lines manually (metadata trunc
 - **paper-citation-tracer** — 横向内容溯源：给定引文段落与被引文献 PDF，高亮定位原文出处（回答“引得对不对”）。与本技能正交互补：本技能回答“存不存在”。https://github.com/Imad7777/paper-citation-tracer
 - **chi-review** — CHI 审稿全流程主技能，在引用核验环节调用本技能。 https://github.com/Imad7777/CHI-Review
 
+### 免责声明
+
+**该skill可有效提升引文核验速度，但实际引用情况依旧建议人工亲自核验查阅**
+
 ## License
 
 MIT
