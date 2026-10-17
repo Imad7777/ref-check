@@ -3,12 +3,13 @@ name: ref-check
 description: |
   [EN] Verify the authenticity of scholarly references: parse reference entries from an
   extracted manuscript text, verify each DOI against the Crossref API and each arXiv ID
-  against the arXiv API, fuzzy-compare claimed vs. official titles, and produce an
-  OK / MISMATCH / FAIL / ARXIV / NODOI report. Works for any venue (CHI, CSCW, NeurIPS,
-  journals). Use when asked to check for fabricated citations or validate reference lists.
+  against the arXiv API, best-window title comparison against Crossref/arXiv records,
+  and produce an OK / REVIEW / MISMATCH / FAIL / ARXIV / NODOI report. Works for any
+  venue (CHI, CSCW, NeurIPS, journals). Use when asked to check for fabricated citations
+  or validate reference lists.
   [中文] 学术论文参考文献真实性核验：从论文全文提取文本解析参考文献条目，DOI 送 Crossref
-  API、arXiv ID 送 arXiv API 逐条验证，标题模糊比对后输出 OK / MISMATCH / FAIL / ARXIV /
-  NODOI 分类报告。适用于任何 venue；用于检测伪造引用或自查参考文献。
+  API、arXiv ID 送 arXiv API 逐条验证，整条条目与官方标题做最优滑窗比对，输出
+  OK / REVIEW / MISMATCH / FAIL / ARXIV / NODOI 分类报告。适用于任何 venue；用于检测伪造引用或自查参考文献。
 ---
 
 # Reference Check / 参考文献核验
@@ -40,7 +41,8 @@ venue 是否与官方登记一致。
      a Crossref 404 on a repaired DOI falls back to `https://api.datacite.org/dois/{doi}`.
    - arXiv → `https://export.arxiv.org/api/query?id_list={id}`; parse `<entry><title>`.
    - Line-wrapped DOIs are stitched by `repair_doi` (see step 2); network errors retry
-     with backoff — a FAIL that survives retries is worth re-running before judging.
+     with backoff — if an entry still FAILs after retries, re-run the batch before
+     judging: transient network outages typically produce clusters of consecutive FAILs.
    - Entries without a DOI (book chapters, monographs, web pages) are judged manually — never FAIL.
 4. **Title comparison (v2)**: compare the FULL entry (whitespace-collapsed) against the
    official title via best-window partial ratio — slide a window of len(official) over the
@@ -59,17 +61,18 @@ venue 是否与官方登记一致。
      结尾是 `doi:10.1016/j.tics.`，续行 `2021.02.007` 在下一行；只看命中行会误判"残缺
      DOI"）。更稳妥的方式：切分时把条目内部换行合并为空格（或拼接下一行）后再匹配 DOI。
    - **"DOI 看似残缺"是续行信号而非引用错误**：正则抓到以 `.` 或 `/` 结尾的 DOI
-     （如 `10.1016/j.tics.`、`10.1145/`），先假定跨行折断，回原文拼接验证后再下结论。
-3. 逐条核验：DOI → Crossref API（带 mailto 的 User-Agent，限速 0.3–0.5 秒）；
-   `10.48550/arXiv.*` 是 DataCite 前缀 → 直接送 arXiv API；Crossref 404 且 DOI 已修复 →
-   回退 DataCite API（api.datacite.org）；跨行 DOI 由 repair_doi 拼接（见第 2 步）；
-   网络错误带退避重试，重试后仍 FAIL 的先重跑再下结论。arXiv → arXiv API；
-   无 DOI 条目（书章/专著/网页）人工判断，列出来，不判 FAIL。
+     （如 `10.1016/j.tics.`、`10.1145/`），先假定跨行折断，回原文拼接验证；确认拼接后仍无法解析才可判 FAIL。
+3. **逐条核验**：
+   - DOI → Crossref API（`https://api.crossref.org/works/{doi}`，User-Agent 带 mailto，请求间隔 0.3–0.5 秒），取回 `title / container-title / issued`；
+   - `10.48550/arXiv.*` 是 DataCite 前缀 → 直接送 arXiv API；Crossref 404 且 DOI 已修复 → 回退 DataCite API；
+   - arXiv ID → arXiv API，解析 `<entry><title>`；
+   - 跨行 DOI 由 `repair_doi` 拼接（见第 2 步）；网络错误带退避重试，重试后仍成段 FAIL 的先重跑再下结论（本机网络偶发断连会连续多条目 FAIL）；
+   - 无 DOI 条目（书章/专著/网页）人工判断，列出来，不判 FAIL。
 4. 标题比对（v2）：**整条条目**（合并空白）vs 官方标题，用最优滑窗 partial ratio
    （归一化后精确子串 = 1.0）。分档：**≥0.85 OK / 0.60–0.85 REVIEW / <0.60 MISMATCH**；
    官方年份在条目中找不到 → 强制至少 REVIEW。
-5. 输出逐条报告（编号 | DOI | 分数 | 引文标题 | 官方标题 | 年份 | venue | 状态）+ 总体
-   结论；所有 REVIEW/MISMATCH/FAIL 逐条人工复核，核验结论写入交付文档的复核/附录小节。
+5. **输出**：每条一行——`编号 | DOI | 分数 | 引文标题 | 官方标题 | 年份 | venue | 状态`，末尾给
+   总体结论；所有 REVIEW / MISMATCH / FAIL 逐条人工复核；核验结论写入交付文档的复核/附录小节。
 
 ## 2. Known false positives / 可能的检查失误
 
@@ -81,8 +84,8 @@ venue 是否与官方登记一致。
   fall below the OK band — that is what REVIEW is for.
 - Subtitle casing / hyphenation differences.
 
-中文：官方元数据标题截断（DOI 解析正确即为 OK，v2 下多落入 REVIEW 灰区，人工确认）；极短官方
-标题可能够不到 OK 档；副标题大小写与连字符差异。
+中文：官方元数据标题截断（DOI 解析正确即为 OK，v2 下通常落入 REVIEW 灰区，需人工确认）；极短官方
+标题可能低于 OK 档；副标题大小写与连字符差异。
 
 ## 3. Genuine mismatch signals / 引用错误
 
